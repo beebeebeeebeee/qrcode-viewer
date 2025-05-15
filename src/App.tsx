@@ -1,57 +1,12 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Scanner } from '@yudiel/react-qr-scanner';
 import { Button } from './components/ui/button';
 import { QRCodeSVG } from 'qrcode.react';
 import Barcode from 'react-barcode';
 import { Storage } from './lib/storage';
-import './App.css';
-import './buttons.css';
-
-interface QRCodeData {
-  id: string;
-  value: string;
-  description: string;
-  timestamp: number;
-  format: string;
-}
-
-// Define the interface for IDetectedBarcode to match the one from @yudiel/react-qr-scanner
-interface IDetectedBarcode {
-  rawValue: string;
-  format: string;
-  boundingBox?: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
-  cornerPoints?: { x: number; y: number }[];
-}
-
-// Define the type for barcode formats based on what's expected
-type BarcodeFormat = 
-  | 'aztec' 
-  | 'code_128' 
-  | 'code_39' 
-  | 'code_93' 
-  | 'codabar' 
-  | 'databar' 
-  | 'databar_expanded' 
-  | 'data_matrix' 
-  | 'dx_film_edge' 
-  | 'ean_13' 
-  | 'ean_8' 
-  | 'itf' 
-  | 'maxi_code' 
-  | 'micro_qr_code' 
-  | 'pdf417' 
-  | 'qr_code' 
-  | 'rm_qr_code' 
-  | 'upc_a' 
-  | 'upc_e' 
-  | 'linear_codes' 
-  | 'matrix_codes' 
-  | 'unknown';
+import { QRCodeCard } from './components/QRCodeCard';
+import { QRCodeData, IDetectedBarcode, BarcodeFormat, BarcodeFormatType } from './types';
+import { Toaster } from './components/ui/toaster';
 
 // Array of formats that should use QRCodeSVG
 const qrCodeFormats = ['qr_code', 'micro_qr_code', 'rm_qr_code'];
@@ -68,30 +23,6 @@ const linearBarcodeFormats = [
   'codabar',
   'itf'
 ];
-
-// Type for react-barcode supported formats directly from react-barcode definition
-type BarcodeFormatType = 
-  | 'CODE39'
-  | 'CODE128'
-  | 'CODE128A'
-  | 'CODE128B'
-  | 'CODE128C'
-  | 'EAN13'
-  | 'EAN8'
-  | 'EAN5'
-  | 'EAN2'
-  | 'UPC'
-  | 'UPCE'
-  | 'ITF14'
-  | 'ITF'
-  | 'MSI'
-  | 'MSI10'
-  | 'MSI11'
-  | 'MSI1010'
-  | 'MSI1110'
-  | 'pharmacode'
-  | 'codabar'
-  | 'GenericBarcode';
 
 // Map formats to react-barcode supported formats
 const formatMap: Record<string, BarcodeFormatType> = {
@@ -144,6 +75,10 @@ export function App() {
   const saveDescription = (id: string) => {
     const updatedCodes = Storage.updateQRCode(id, { description: editDescription });
     setQrCodes(updatedCodes);
+    setEditingId(null);
+  };
+
+  const cancelEditing = () => {
     setEditingId(null);
   };
 
@@ -209,22 +144,21 @@ export function App() {
   };
 
   return (
-    <div className="qr-app">
-      <header>
-        <h1>Barcode & QR Scanner</h1>
-        <div className="header-actions">
+    <div className="mx-auto px-4 py-8 w-full max-w-[100vw] overflow-hidden min-h-screen relative">
+      <Toaster />
+      <header className="text-center mb-8">
+        <h1 className="text-2xl font-bold text-gray-800 mb-4">Barcode & QR Scanner</h1>
+        <div className="flex justify-center gap-4 mb-5">
           <Button 
             onClick={() => Storage.exportQRCodes()} 
             variant="outline" 
             size="sm"
             disabled={qrCodes.length === 0}
             aria-label="Export saved codes to JSON file"
-            className="export-button"
-            style={{ backgroundColor: '#f8f8f8', color: '#4285f4', border: '1px solid #ddd' }}
           >
             Export Codes
           </Button>
-          <label className="import-button">
+          <label className="cursor-pointer">
             <input
               type="file"
               accept=".json"
@@ -243,14 +177,12 @@ export function App() {
                   e.target.value = '';
                 }
               }}
-              style={{ display: 'none' }}
+              className="hidden"
               aria-label="Import codes from JSON file"
             />
             <Button 
               variant="outline" 
               size="sm" 
-              className="import-button-element"
-              style={{ backgroundColor: '#f8f8f8', color: '#4285f4', border: '1px solid #ddd' }}
             >
               Import Codes
             </Button>
@@ -260,7 +192,7 @@ export function App() {
       
       <main>
         {isScanning ? (
-          <div className="scanner-container">
+          <div className="relative max-w-xl mx-auto rounded-lg overflow-hidden shadow-lg">
             <Scanner 
               onScan={handleScan}
               onError={(error) => console.error(error)}
@@ -268,78 +200,36 @@ export function App() {
             />
             <Button 
               onClick={() => setIsScanning(false)}
-              className="close-scanner"
+              className="absolute top-4 right-4 z-10"
               variant="destructive"
             >
               Close Scanner
             </Button>
           </div>
         ) : (
-          <div className="codes-list">
+          <div className="flex flex-col gap-5 pb-20 max-w-3xl w-full mx-auto">
             {qrCodes.length === 0 ? (
-              <div className="empty-state">
-                <p>No codes saved yet. Click the + button to scan a barcode or QR code.</p>
-                <p className="empty-state-help">
+              <div className="text-center py-12">
+                <p className="text-gray-600">No codes saved yet. Click the + button to scan a barcode or QR code.</p>
+                <p className="text-sm mt-3 text-gray-500 max-w-md mx-auto">
                   You can scan QR codes and barcodes, add descriptions, and export your data. 
                   All scans are saved to your browser's storage.
                 </p>
               </div>
             ) : (
               qrCodes.map(code => (
-                <div key={code.id} className="qr-code-item">
-                  <div className="qr-code-content">
-                    <div className="qr-code-image">
-                      {renderBarcode(code)}
-                    </div>
-                    <div className="qr-code-details">
-                      <div className="qr-code-value">{code.value}</div>
-                      <div className="qr-code-format">Format: {code.format || 'Unknown'}</div>
-                      
-                      {editingId === code.id ? (
-                        <div className="edit-description">
-                          <input
-                            type="text"
-                            value={editDescription}
-                            onChange={(e) => setEditDescription(e.target.value)}
-                            placeholder="Enter description"
-                          />
-                          <Button 
-                            onClick={() => saveDescription(code.id)}
-                            variant="outline"
-                            size="sm"
-                            className="save-button"
-                            style={{ backgroundColor: '#f8f8f8', color: '#4285f4', border: '1px solid #ddd' }}
-                          >
-                            Save
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="qr-code-description">
-                          <p>{code.description || 'No description'}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="qr-code-bottom-bar">
-                    <span className="timestamp">
-                      {new Date(code.timestamp).toLocaleString()}
-                    </span>
-                    <div className="action-buttons">
-                      <button 
-                        className="edit-button"
-                        onClick={() => startEditing(code.id, code.description)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="delete-button"
-                        onClick={() => deleteCode(code.id)}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <QRCodeCard
+                  key={code.id}
+                  code={code}
+                  onEdit={startEditing}
+                  onDelete={deleteCode}
+                  onSave={saveDescription}
+                  onCancel={cancelEditing}
+                  isEditing={editingId === code.id}
+                  editDescription={editDescription}
+                  setEditDescription={setEditDescription}
+                  renderBarcode={renderBarcode}
+                />
               ))
             )}
           </div>
@@ -347,11 +237,10 @@ export function App() {
       </main>
       
       <Button 
-        className="scan-button"
+        className="fixed bottom-8 right-8 w-14 h-14 rounded-full text-2xl shadow-lg hover:scale-110"
         onClick={() => setIsScanning(true)}
         aria-label="Scan Barcode"
         variant="default"
-        size="icon"
       >
         +
       </Button>
