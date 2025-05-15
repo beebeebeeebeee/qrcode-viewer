@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Scanner } from '@yudiel/react-qr-scanner';
 import { Button } from './components/ui/button';
 import { QRCodeSVG } from 'qrcode.react';
