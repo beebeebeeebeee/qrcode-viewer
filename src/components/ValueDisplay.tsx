@@ -73,14 +73,14 @@ export function ValueDisplay({ value }: ValueDisplayProps) {
     return () => clearInterval(intervalId);
   }, [value, isTotpUri]);
   
-  const handleCopyTotpCode = () => {
-    if (!totpCode || totpCode === 'Error') return;
+  const handleCopy = (value: string) => {
+    if (!value) return;
     
-    navigator.clipboard.writeText(totpCode)
+    navigator.clipboard.writeText(value)
       .then(() => {
         toast({
           title: "Copied!",
-          description: "TOTP code copied to clipboard",
+          description: "Value copied to clipboard",
           variant: "success",
         });
       })
@@ -120,6 +120,9 @@ export function ValueDisplay({ value }: ValueDisplayProps) {
               value={value}
             />
           </div>
+          <div className="flex justify-end items-center">
+            <Button onClick={() => handleCopy(value)}>Copy</Button>
+          </div>
         </DialogContent>
       </Dialog>
       
@@ -130,7 +133,7 @@ export function ValueDisplay({ value }: ValueDisplayProps) {
           <Button 
             variant="ghost" 
             size="sm"
-            onClick={handleCopyTotpCode}
+            onClick={() => handleCopy(totpCode)}
             className="text-gray-600 hover:text-gray-800"
             title="Copy to clipboard"
           >
@@ -154,14 +157,14 @@ export function ValueDisplay({ value }: ValueDisplayProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => handleOpenInBrowser(value)}>
-                Visit url
+                Visit URL
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleOpenInBrowser(`https://${domain}`)}>
-                Visit domain
+                Visit Domain
               </DropdownMenuItem>
               {urlWithoutQuery !== value && (
                 <DropdownMenuItem onClick={() => handleOpenInBrowser(urlWithoutQuery)}>
-                  Visit without query
+                  Visit Without Query
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>

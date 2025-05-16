@@ -1,4 +1,9 @@
-import { authenticator } from '@otplib/preset-browser';
+import { createDigest, createRandomBytes } from '@otplib/plugin-crypto-js';
+import { keyDecoder, keyEncoder } from '@otplib/plugin-base32-enc-dec';
+import {
+  Authenticator,
+  AuthenticatorOptions,
+} from '@otplib/core';
 
 export interface TotpData {
   secret: string;
@@ -14,16 +19,16 @@ export interface TotpData {
 export const parseTotpUri = (uri: string): TotpData | null => {
   try {
     if (!uri.startsWith('otpauth://totp/')) return null;
-    
+
     const url = new URL(uri);
     const params = new URLSearchParams(url.search);
     const secret = params.get('secret');
-    
+
     if (!secret) return null;
-    
+
     const label = decodeURIComponent(url.pathname.substring(7)); // Remove /totp/
     const issuer = params.get('issuer') || undefined;
-    
+
     return { secret, label, issuer };
   } catch (error) {
     console.error('Failed to parse TOTP URI:', error);
@@ -36,14 +41,21 @@ export const parseTotpUri = (uri: string): TotpData | null => {
  * @param secret The TOTP secret
  * @returns The generated TOTP code or null if generation fails
  */
-export const generateTotpCode = (secret: string): string | null => {
+export const generateTotpCode = (secret: string, next: boolean = false): string | null => {
   try {
+    const authenticator = new Authenticator<AuthenticatorOptions>({
+      createDigest,
+      createRandomBytes,
+      keyDecoder,
+      keyEncoder
+    });
+
     // Configure authenticator
-    authenticator.options = { 
+    authenticator.options = {
       digits: 6,
-      // Use default period (30 seconds)
+      epoch: Date.now() + (next ? 30000 : 0),
     };
-    
+
     return authenticator.generate(secret);
   } catch (error) {
     console.error('Failed to generate TOTP code:', error);

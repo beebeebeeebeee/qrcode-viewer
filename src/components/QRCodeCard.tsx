@@ -13,7 +13,10 @@ interface QRCodeCardProps {
   isEditing: boolean;
   editDescription: string;
   setEditDescription: (description: string) => void;
-  renderBarcode: (code: QRCodeData) => React.ReactNode;
+  renderBarcode: (code: QRCodeData, qrSize?: number, linearWidth?: number, linearHeight?: number) => React.ReactNode;
+  qrSize?: number;
+  linearWidth?: number;
+  linearHeight?: number;
 }
 
 export function QRCodeCard({
@@ -25,19 +28,22 @@ export function QRCodeCard({
   isEditing,
   editDescription,
   setEditDescription,
-  renderBarcode
+  renderBarcode,
+  qrSize = 140,
+  linearWidth = 1.7,
+  linearHeight = 70
 }: QRCodeCardProps) {
   const [showCodeDialog, setShowCodeDialog] = useState(false);
   
   return (
     <>
-      <div className="flex flex-col border border-gray-200 rounded-lg p-5 bg-white shadow-sm hover:shadow-md hover:-translate-y-1 transition-all overflow-hidden max-w-full">
+      <div className="flex flex-col border border-gray-200 rounded-lg p-5 bg-white shadow-sm hover:shadow-md hover:-translate-y-1 transition-all overflow-hidden min-w-full">
         <div className="flex flex-wrap md:flex-nowrap items-center gap-4">
           <div 
             className="flex-none w-36 flex justify-center items-center overflow-hidden cursor-pointer"
             onClick={() => setShowCodeDialog(true)}
           >
-            {renderBarcode(code)}
+            {renderBarcode(code, qrSize, linearWidth, linearHeight)}
           </div>
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
             {/* Description first (swapped with value) */}
@@ -117,14 +123,14 @@ export function QRCodeCard({
       </div>
 
       <Dialog open={showCodeDialog} onOpenChange={setShowCodeDialog}>
-        <DialogContent className="max-w-3xl w-full mx-auto p-6">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{code.description || 'QR Code'}</DialogTitle>
+            <DialogTitle>{code.description || 'No description'}</DialogTitle>
           </DialogHeader>
-          <div className="flex justify-center items-center py-8">
-            {renderBarcode(code)}
+          <div className="flex justify-center items-center py-1">
+            {renderBarcode(code, qrSize * 2.5, linearWidth * 2, linearHeight * 2)}
           </div>
-          <div className="flex justify-between items-center mt-6">
+          <div className="flex justify-between items-center">
             <div className="text-sm">Format: {code.format || 'Unknown'}</div>
             <Button onClick={() => setShowCodeDialog(false)}>Close</Button>
           </div>
